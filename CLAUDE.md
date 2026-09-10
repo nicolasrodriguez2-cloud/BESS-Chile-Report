@@ -24,11 +24,10 @@ https://www.coordinador.cl/wp-content/uploads/{AAAA}/{MM}/CEN_Informe_Mensual_SE
 
 ({MesAbrev} = Ene/Feb/Mar/Abr/May/Jun/Jul/Ago/Sep/Oct/Nov/Dic; {AA} = año a 2 dígitos. Ejemplo confirmado: CEN_Informe_Mensual_SEN_Feb26.pdf. Recordar el desfase de un mes: el informe de {MM} trae datos de {MM}-1, así que para obtener el dato de un mes X hay que pedir el PDF de X+1.)
 
-Orden de intento, sin insistir más allá de esto:
+Orden de intento:
 
 Fetch directo a la URL predicha para el mes que se necesita.
 Si da 404 (no robots.txt), es que el patrón de nombre cambió ese mes — usar una búsqueda web puntual (no crawl del sitio) para localizar el PDF exacto y reintentar el fetch directo a esa URL.
-Si el fetch (directo o vía URL encontrada por búsqueda) sigue bloqueado por el propio sitio, se marca Coordinador como fuente no accesible esta corrida en el changelog — igual que Ministerio de Energía o Generadoras.cl cuando bloquean. No es un fallo a resolver con más intentos, es una fuente señalizada.
 
 Regla crítica de todas las fuentes: algunos reportes se publican bajo el nombre del mes "X" pero contienen datos correspondientes al mes "X-1". Antes de cargar cualquier cifra, verificar dentro del documento mismo a qué período corresponde el dato — nunca asumir el período por el nombre del archivo o el mes de publicación. Si el período real no queda claro en el documento, señalizarlo en el changelog en vez de adivinar.
 
