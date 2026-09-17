@@ -130,3 +130,18 @@ real de los datos]
 
 ### Fuentes sin publicación / sin acceso a la fecha de esta corrida
 [cuáles de las 5 no tenían informe disponible, o siguen bloqueadas]
+
+## Relación con el tracker semanal de pipeline (fuera de este repo)
+
+Existe un segundo archivo, `Weekly_Report_Pipeline_LATAM.xlsx`, que **no vive en
+este repo y esta Routine no lo toca**. Vive como adjunto de Chat en el Project
+"Monthly report" (claude.ai), y se actualiza semana a semana ahí mismo con la
+Skill `reporte-semanal-pm`, a partir de los updates que Nicolás dicta en texto
+libre.
+
+Ese archivo es la fuente para las slides 10-13 (Proposals in process) y 14-15
+(Potential Clients) del PPT "BYD Chile Market Report" — antes esas slides se
+completaban dictando todo de nuevo cada mes en el chat; ahora se arman a partir
+del tracker semanal más reciente. No afecta en nada la estructura ni los datos
+de `Información_reportes_Mensuales.xlsx`, ni el criterio de esta Routine para
+las demás slides.
