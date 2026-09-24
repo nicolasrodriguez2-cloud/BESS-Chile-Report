@@ -9,7 +9,7 @@ Archivo/carpeta	Qué es
 Información_reportes_Mensuales.xlsx	Archivo oficial, único activo (sin fecha en el nombre). Dos hojas: BESS (capacidad en operación/pruebas/construcción, MW y MWh, más la serie de evolución acumulada) y Energy Matrix (capacidad por tecnología, tabla mensual + resumen con gráfico de torta). Contiene los 2 gráficos nativos de Excel que usa el reporte PPT.
 /ACERA/, /E ABIERTA/	PDFs mensuales de las 2 fuentes que sí se scrapean solas — la Routine los archiva acá cada corrida como respaldo/auditoría de qué documento sustenta cada cifra. No son el insumo que la Routine lee (siempre fetchea en vivo), son el registro.
 /COORDINADOR/, /MIN ENERGIA/	PDFs mensuales subidos a mano por Nicolás — estas 2 fuentes bloquean el acceso automatizado (una por robots.txt declarado contra ClaudeBot, la otra por WAF de dominio completo — ver CLAUDE.md). La Routine lee de acá, nunca las descarga sola.
-/GENERADORAS/	PDFs mensuales — pendiente de confirmar si esta fuente puede pasar a automatizada (ver CLAUDE.md). Mientras tanto se trata igual que Coordinador/Min. Energía.
+/GENERADORAS/	PDFs mensuales subidos a mano — confirmado (2026-09-24) que el dominio está cubierto por un captcha de Sucuri, así que esta fuente queda como manual definitivo, igual que Coordinador/Min. Energía (ver CLAUDE.md).
 CLAUDE.md	Instrucciones que lee la Claude Code Routine en cada corrida mensual: qué fuentes scrapear, cómo mapear cada dato a su celda exacta, y qué reglas no negociables seguir. Es la referencia autoritativa — este README es solo el mapa de orientación rápida.
 /historial/	Copias fechadas (AAAAMMDD_Información_reportes_Mensuales.xlsx) de cada corrida, para trazabilidad. No se edita a mano.
 
