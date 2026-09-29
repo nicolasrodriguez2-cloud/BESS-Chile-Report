@@ -29,7 +29,7 @@ Carpeta	Fuente	Acceso	Qué hace la Routine con la carpeta
 /E ABIERTA/	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado	Mismo patrón que ACERA: fetch en vivo + copia de respaldo en la carpeta.
 /COORDINADOR/	Coordinador Eléctrico Nacional — Informe Mensual	❌ Manual (robots.txt: Disallow / para ClaudeBot — ver más abajo)	La Routine lee de acá, nunca intenta bajar el PDF sola. Nicolás sube el PDF del mes navegando el sitio como cualquier persona.
 /MIN ENERGIA/	Ministerio de Energía — Reporte de Proyectos	❌ Manual (WAF/403 en todo el dominio)	Igual que Coordinador: la Routine solo lee de acá.
-/GENERADORAS/	Generadoras.cl — Boletines Mensuales	❌ Manual (captcha Sucuri en todo el dominio — confirmado 2026-09-24)	Igual que Coordinador/Ministerio: la Routine lee de acá, nunca intenta bajar el PDF sola.
+/GENERADORAS/	Generadoras.cl — Boletines Mensuales	⚠️ Pendiente de confirmar	Hasta confirmar si el acceso automatizado es viable (ver sección abajo), la Routine trata esta carpeta igual que Coordinador/Ministerio: lee de acá, no intenta bajar sola. Si se confirma que se puede automatizar, pasa al mismo patrón que ACERA/E. Abierta.
 Por qué Coordinador y Ministerio de Energía quedan en manual
 
 Coordinador: su robots.txt declara explícitamente User-agent: ClaudeBot → Disallow: / — decisión declarada del sitio dirigida específicamente al crawler de Anthropic, no un bloqueo técnico incidental. No se evade de ninguna forma — ni cambiando identidad/user-agent, ni pidiendo un asset estático puntual en vez de navegar el sitio, aunque esa ruta responda 200 técnicamente. El robots.txt sigue diciendo "no" a nivel de dominio completo, y esa directiva se respeta.
@@ -38,13 +38,9 @@ Ministerio de Energía: WAF (Radware) devuelve 403 en todo el dominio energia.go
 
 Si en algún momento se consigue una vía de acceso autorizada de cualquiera de las dos instituciones (API key vigente, whitelist de IP, convenio de datos, etc.), se actualiza esta sección y esa fuente pasa al patrón de ACERA/E. Abierta.
 
-Generadoras.cl — resuelto: manual definitivo (2026-09-24)
+Pendiente — Generadoras.cl
 
-Quedaba pendiente confirmar si la navegación del sitio cargaba sin challenge. Confirmado que no: `https://www.generadoras.cl/robots.txt` devuelve HTTP 202 con un redirect a `/.well-known/sgcaptcha/` — el captcha de Sucuri cubre el dominio completo, al punto de que ni siquiera se puede leer el robots.txt para conocer la política declarada del sitio.
-
-No se intenta ninguna vía alternativa: no se resuelve el challenge, no se cambia identidad/user-agent, y no se pide un PDF suelto por URL directa para saltar el listado aunque esa ruta responda 200. Al no poder leerse el robots.txt, la política del sitio es desconocida, y ante esa duda la regla del repo es no forzar el acceso.
-
-Generadoras.cl queda entonces como fuente manual, en el mismo régimen que Coordinador y Ministerio de Energía: Nicolás sube el PDF del mes a /GENERADORAS/ y la Routine solo lee de ahí. Si más adelante aparece una vía autorizada (API, whitelist, convenio), se actualiza esta sección y la fuente pasa al patrón de ACERA/E. Abierta.
+Un PDF suelto de generadoras.cl/wp-content/uploads/... respondió 200 en una prueba anterior — el bloqueo tipo captcha (Sucuri) visto antes puede no aplicar a esa ruta. Falta confirmar si la página de listado (generadoras.cl/category/boletines-mensuales/) carga sin challenge; si sí, el acceso automatizado es viable (mismo patrón que ACERA) y esta fuente sale de la tabla de "manual". Si también bloquea, se confirma como manual definitivo.
 
 Regla crítica de todas las fuentes
 
@@ -81,15 +77,31 @@ Filas 16-25 — tabla resumen del mes más reciente, con categorías combinadas 
 
 ⚠️ Energy Matrix!C25 es un valor escrito a mano (no fórmula), y es el multiplicador de toda la columna B de la tabla resumen. Al agregar una columna nueva, actualizarlo junto con las referencias de C17:C24, o se descuadra en silencio la tabla que alimenta chart2.
 
-Market Share Estimate (a definir dónde vive exactamente)
+Main Future Projects (≥ ~1000 MWh)
 
-Investigación abierta (no limitada a las 5 fuentes de arriba) para estimar participación de mercado BESS por proveedor. No hay fuente oficial — es una estimación. Reglas:
+Investigación abierta (no limitada a las 5 fuentes de arriba) para identificar proyectos BESS relevantes en Chile por tamaño:
 
-Documentar metodología en cada corrida: qué proyectos se usaron, qué fabricante se les atribuyó y con qué fuente, qué quedó sin confirmar.
-Un proyecto sin fabricante identificable con confianza razonable se excluye del cálculo, no se le asigna uno a ojo.
-Nunca presentar el resultado con más precisión de la que la metodología sostiene.
-Incluye altas/bajas de la lista de "Main future projects" (≥ ~1000 MWh): alta cuando se identifica un proyecto nuevo, baja cuando entra en operación. La Routine puede agregar/quitar filas acá sin señalizar para revisión previa (no es una decisión estructural), pero siempre queda en el changelog.
+Alta: proyecto nuevo identificado con capacidad ≥ ~1000 MWh.
+Baja: proyecto que pasó de "futuro/en desarrollo" a "en operación" — se saca de esta lista (el dato pasa a vivir en las tablas de operación correspondientes).
+La Routine puede agregar/quitar filas acá sin señalizar para revisión previa (no es una decisión estructural), pero siempre queda en el changelog.
+Tabla unificada ACERA — "BESS Situation in Chile"
+
+Nueva tabla (hoja ACERA Summary, o al final de la hoja BESS — a elección de la Routine, dejarlo señalado en el changelog la primera vez que se cree) que consolida solo las columnas de fuente ACERA de las seis tablas de arriba, en el mismo formato que ACERA usa en su propio reporte: una fila por mes, tres bloques (Operation, Test, Construction), cada uno con sub-columnas MW y MWh.
+
+Mapeo exacto (referencias a la hoja BESS, nunca valores hardcodeados — son fórmulas que apuntan a las celdas ya cargadas):
+
+Columna de la tabla nueva	Referencia
+Operation MW	=BESS!E{fila}
+Operation MWh	=BESS!J{fila}
+Test MW	=BESS!P{fila}
+Test MWh	=BESS!T{fila}
+Construction MW	=BESS!AA{fila}
+Construction MWh	=BESS!AE{fila}
+
+Formato visual de referencia: encabezado combinado "BESS Situation in Chile (ACERA, {año})", filas Enero-Diciembre, celda vacía si el dato ACERA de ese mes todavía no está cargado (no se estima, mismo criterio que el resto del archivo). Se actualiza sola cada corrida porque son fórmulas — la Routine no tiene que "llenarla" aparte, solo asegurarse de que las 6 columnas de origen (E, J, P, T, AA, AE) estén al día.
+
 Qué NO hace esta Routine
+No investiga ni estima participación de mercado por fabricante (market share) — se sacó del alcance porque la búsqueda abierta no encontraba información confiable y consumía tiempo/tokens sin resultado. Si en el futuro aparece una fuente concreta y verificable para esto, se reincorpora explícitamente al CLAUDE.md, no antes.
 No toca ningún archivo .pptx — vive fuera de este repo.
 No inventa el período de un dato cuando el reporte fuente no lo deja claro — lo señaliza.
 No rellena con estimación propia una celda vacía porque una fuente no publicó a tiempo — la deja vacía y lo nota en el changelog.
@@ -105,11 +117,11 @@ Changelog de cada corrida (formato, va en la descripción del PR)
 - Huecos que quedan pendientes: [fuente que no había publicado al momento
   de la corrida]
 
-### Fuentes automatizadas (ACERA, E. Abierta)
+### Fuentes automatizadas (ACERA, E. Abierta [, Generadoras si se confirma])
 - PDF fetcheado y archivado en /[CARPETA]/[nombre]: período verificado
   [mes/año]
 
-### Fuentes manuales procesadas esta corrida (Coordinador / Min. Energía / Generadoras)
+### Fuentes manuales procesadas esta corrida (Coordinador / Min. Energía [/ Generadoras si sigue manual])
 - [institución]: `/[CARPETA]/[nombre exacto del PDF]` → período real
   verificado dentro del documento: [mes/año] → celdas actualizadas: [...]
 - PDFs presentes en la carpeta que aún no se incorporaron (si los hay,
@@ -124,9 +136,12 @@ Changelog de cada corrida (formato, va en la descripción del PR)
 - Tabla resumen 16-25 recalculada con categorías combinadas
 - Recordar actualizar C25 y C17:C24 si corresponde
 
-### Market Share Estimate
-- Metodología de esta corrida: [proyectos usados, fuentes, supuestos]
-- Altas/bajas en Future Projects: [...]
+### Main Future Projects
+- Altas/bajas: [...]
+
+### Tabla unificada ACERA
+- Sin acción manual esperada (son fórmulas) — solo confirmar que no
+  quedó ninguna celda de origen (E/J/P/T/AA/AE) sin actualizar este mes
 
 ### Períodos verificados manualmente (reportes con desfase mes X vs X-1)
 [cualquier caso donde el nombre del reporte no coincidía con el período
@@ -134,18 +149,3 @@ real de los datos]
 
 ### Fuentes sin publicación / sin acceso a la fecha de esta corrida
 [cuáles de las 5 no tenían informe disponible, o siguen bloqueadas]
-
-## Relación con el tracker semanal de pipeline (fuera de este repo)
-
-Existe un segundo archivo, `Weekly_Report_Pipeline_LATAM.xlsx`, que **no vive en
-este repo y esta Routine no lo toca**. Vive como adjunto de Chat en el Project
-"Monthly report" (claude.ai), y se actualiza semana a semana ahí mismo con la
-Skill `reporte-semanal-pm`, a partir de los updates que Nicolás dicta en texto
-libre.
-
-Ese archivo es la fuente para las slides 10-13 (Proposals in process) y 14-15
-(Potential Clients) del PPT "BYD Chile Market Report" — antes esas slides se
-completaban dictando todo de nuevo cada mes en el chat; ahora se arman a partir
-del tracker semanal más reciente. No afecta en nada la estructura ni los datos
-de `Información_reportes_Mensuales.xlsx`, ni el criterio de esta Routine para
-las demás slides.
