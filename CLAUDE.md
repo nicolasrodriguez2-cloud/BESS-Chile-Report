@@ -79,7 +79,7 @@ Filas 3-13 — tabla mensual con las categorías tal como las reporta el Coordin
 
 Filas 16-25 — tabla resumen del mes más reciente, con categorías combinadas (Hydric = Reservoir + Run of the River; Solar = Solar PV + Solar Thermal; el resto igual) + columna de %. Alimenta chart2 (el pie de capacidad instalada, el mismo que usa el PPT). Se recalcula cada mes tomando la última columna de la tabla de arriba y combinando categorías — no es un dato aparte, es una transformación de la tabla de arriba.
 
-⚠️ Energy Matrix!C25 es un valor escrito a mano (no fórmula), y es el multiplicador de toda la columna B de la tabla resumen. Al agregar una columna nueva, actualizarlo junto con las referencias de C17:C24, o se descuadra en silencio la tabla que alimenta chart2.
+⚠️ Energy Matrix!C25 es el multiplicador de toda la columna B de la tabla resumen. En el archivo real **es una fórmula** (`=+H13`), igual que C17:C24, que ya referencian la última columna cargada — no hay un número suelto escrito a mano (verificado 2026-10-01 y 2026-10-08; la advertencia anterior era incorrecta). Al agregar una columna nueva hay que correr las 9 referencias (C17:C24 y C25) a la columna nueva, o se descuadra en silencio la tabla que alimenta chart2. No reemplazar esas fórmulas por valores.
 
 Main Future Projects (≥ ~1000 MWh)
 
