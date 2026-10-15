@@ -29,7 +29,7 @@ Carpeta	Fuente	Acceso	Qué hace la Routine con la carpeta
 /E ABIERTA/	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado	Mismo patrón que ACERA: fetch en vivo + copia de respaldo en la carpeta.
 /COORDINADOR/	Coordinador Eléctrico Nacional — Informe Mensual	❌ Manual (robots.txt: Disallow / para ClaudeBot — ver más abajo)	La Routine lee de acá, nunca intenta bajar el PDF sola. Nicolás sube el PDF del mes navegando el sitio como cualquier persona.
 /MIN ENERGIA/	Ministerio de Energía — Reporte de Proyectos	❌ Manual (WAF/403 en todo el dominio)	Igual que Coordinador: la Routine solo lee de acá.
-/GENERADORAS/	Generadoras.cl — Boletines Mensuales	⚠️ Pendiente de confirmar	Hasta confirmar si el acceso automatizado es viable (ver sección abajo), la Routine trata esta carpeta igual que Coordinador/Ministerio: lee de acá, no intenta bajar sola. Si se confirma que se puede automatizar, pasa al mismo patrón que ACERA/E. Abierta.
+/GENERADORAS/	Generadoras.cl — Boletines Mensuales	✅ Automatizado (confirmado en la corrida 2026-10)	Mismo patrón que ACERA/E. Abierta: fetch en vivo del boletín del mes + copia de respaldo en la carpeta. Ver nota de acceso más abajo (el slug del post no siempre coincide con el mes del título).
 Por qué Coordinador y Ministerio de Energía quedan en manual
 
 Coordinador: su robots.txt declara explícitamente User-agent: ClaudeBot → Disallow: / — decisión declarada del sitio dirigida específicamente al crawler de Anthropic, no un bloqueo técnico incidental. No se evade de ninguna forma — ni cambiando identidad/user-agent, ni pidiendo un asset estático puntual en vez de navegar el sitio, aunque esa ruta responda 200 técnicamente. El robots.txt sigue diciendo "no" a nivel de dominio completo, y esa directiva se respeta.
@@ -38,9 +38,32 @@ Ministerio de Energía: WAF (Radware) devuelve 403 en todo el dominio energia.go
 
 Si en algún momento se consigue una vía de acceso autorizada de cualquiera de las dos instituciones (API key vigente, whitelist de IP, convenio de datos, etc.), se actualiza esta sección y esa fuente pasa al patrón de ACERA/E. Abierta.
 
-Pendiente — Generadoras.cl
+Generadoras.cl — resuelto (corrida 2026-10)
 
-Un PDF suelto de generadoras.cl/wp-content/uploads/... respondió 200 en una prueba anterior — el bloqueo tipo captcha (Sucuri) visto antes puede no aplicar a esa ruta. Falta confirmar si la página de listado (generadoras.cl/category/boletines-mensuales/) carga sin challenge; si sí, el acceso automatizado es viable (mismo patrón que ACERA) y esta fuente sale de la tabla de "manual". Si también bloquea, se confirma como manual definitivo.
+Confirmado: generadoras.cl/robots.txt sólo prohíbe /wp-admin/, y la página de listado generadoras.cl/category/boletines-mensuales/ responde 200 sin challenge (el bloqueo tipo Sucuri visto antes ya no aplica). La fuente queda automatizada.
+
+Cómo se navega:
+
+1. Listado: https://generadoras.cl/category/boletines-mensuales/ (www. redirige 301 al dominio sin www; seguir el redirect).
+2. En el listado, ubicar la entrada por el **título** ("Boletín Generadoras de Chile – MES AAAA"), no por el slug del link. ⚠️ El slug no siempre coincide: el boletín de **Junio 2026** vive en `/boletin-generadoras-de-chile-mayo-2026-2/`. Construir la URL adivinando el mes devuelve una página 200 que no es el boletín buscado.
+3. Dentro del post, el PDF está en un `href` a `generadoras.cl/wp-content/uploads/AAAA/MM/...pdf`. En algunos posts el link se arma por JS; si no aparece un `href` .pdf, buscar la cadena `.pdf` en el HTML.
+
+⚠️ Período dentro del boletín: el dato de almacenamiento que usa este repo está en la **página 6** y corresponde al mes del título del boletín. Dos advertencias:
+- Los boletines hasta mayo-2026 imprimían "información de asociados a MES de 2026" en la página 6; desde junio-2026 el layout nuevo ya no imprime esa línea. En su lugar, verificar contra la página 4 (DESTACADOS), cuyos peaks están fechados dentro del mes del título.
+- La página 4 de los boletines viejos repetía la cifra de almacenamiento del mes **anterior** (en el boletín de mayo-26 decía 13.174 MWh, que es el valor de abril). **La página 6 manda siempre.**
+- Otras secciones del mismo boletín sí van desfasadas (la página 5, capacidad de generación, viene "a junio de 2026" en el boletín de agosto-2026). No mezclar.
+
+URLs de las otras dos fuentes automatizadas (verificadas en la corrida 2026-10)
+
+ACERA: la página de estadísticas (acera.cl/estadisticas-del-sector-de-generacion-de-energia-electrica-renovable/) arma los links por JS, así que no sirve raspar su HTML. La vía estable es la API REST de WordPress:
+
+`https://www.acera.cl/wp-json/wp/v2/media?search=Boletin-Estadisticas&per_page=20&orderby=date&order=desc&_fields=date,source_url`
+
+Devuelve los PDFs servidos desde `cdn.acera.cl/wp-content/uploads/AAAA/MM/AAAA-MM-Boletin-Estadisticas-ACERA.pdf`. ⚠️ El mes del nombre del archivo es el mes **del dato**; la carpeta `/AAAA/MM/` de la URL es el mes de **publicación** (el boletín de agosto-26 está bajo `/2026/09/`). Se publica alrededor de la mitad del mes siguiente, así que una corrida a mitad de mes puede encontrar que el boletín del mes anterior todavía no salió. El dato que usa este repo está en la Tabla 6 ("Capacidad instalada de Almacenamiento según avance de los proyectos"), última página del boletín.
+
+Energía Abierta / CNE: el listado es energiaabierta.cl/reportes/ y los PDFs están alojados en cne.cl: `https://www.cne.cl/wp-content/uploads/AAAA/MM/RMensual_vAAAAMM.pdf` (no confundir con `RMensual_ERNC_v...`, que es otro reporte). El capítulo 2 (BESS) está en la página 5 y declara explícitamente el período: "conforme a la Resolución Exenta N.° XXX, con fecha 31 de MES de AAAA" — ese es el período real del dato, un mes antes del nombre del archivo.
+
+⚠️ La serie de las filas 17-57 sale del gráfico "Evolución capacidad de almacenamiento BESS – Según fecha estimada de interconexión" de esa misma página. Es un gráfico de eje **categórico**: sólo aparecen los meses con valor distinto de cero, y las etiquetas del eje salen una categoría por medio. Para leerlo hay que extraer las etiquetas de datos con sus coordenadas X (pdfplumber `chars`) y alinearlas contra las etiquetas de mes del eje; contar barras a ojo da el mes equivocado. Si aparece una categoría nueva sin etiqueta de eje que la ancle, su mes no es determinable desde el gráfico: se señaliza en el changelog, no se adivina.
 
 Regla crítica de todas las fuentes
 
@@ -105,7 +128,7 @@ No investiga ni estima participación de mercado por fabricante (market share) �
 No toca ningún archivo .pptx — vive fuera de este repo.
 No inventa el período de un dato cuando el reporte fuente no lo deja claro — lo señaliza.
 No rellena con estimación propia una celda vacía porque una fuente no publicó a tiempo — la deja vacía y lo nota en el changelog.
-No intenta descargar por su cuenta los PDFs de /COORDINADOR/ ni /MIN ENERGIA/ (ni de /GENERADORAS/ mientras esté pendiente de confirmar) — solo los lee si ya están subidos.
+No intenta descargar por su cuenta los PDFs de /COORDINADOR/ ni /MIN ENERGIA/ — solo los lee si ya están subidos.
 No evade bloqueos declarados (robots.txt) ni técnicos (WAF/captcha) de ninguna fuente, bajo ninguna forma.
 No mergea su propio PR. No renombra, reordena ni elimina carpetas ni hojas sin señalizarlo — incluidos los archivos sin extensión de origen desconocido en cada carpeta de fuente.
 Changelog de cada corrida (formato, va en la descripción del PR)
@@ -117,11 +140,11 @@ Changelog de cada corrida (formato, va en la descripción del PR)
 - Huecos que quedan pendientes: [fuente que no había publicado al momento
   de la corrida]
 
-### Fuentes automatizadas (ACERA, E. Abierta [, Generadoras si se confirma])
+### Fuentes automatizadas (ACERA, E. Abierta, Generadoras)
 - PDF fetcheado y archivado en /[CARPETA]/[nombre]: período verificado
   [mes/año]
 
-### Fuentes manuales procesadas esta corrida (Coordinador / Min. Energía [/ Generadoras si sigue manual])
+### Fuentes manuales procesadas esta corrida (Coordinador / Min. Energía)
 - [institución]: `/[CARPETA]/[nombre exacto del PDF]` → período real
   verificado dentro del documento: [mes/año] → celdas actualizadas: [...]
 - PDFs presentes en la carpeta que aún no se incorporaron (si los hay,
