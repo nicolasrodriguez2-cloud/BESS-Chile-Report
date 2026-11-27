@@ -43,9 +43,9 @@ Si no puedes guardar el PDF de respaldo: anota URL + fecha + hash en el changelo
 Historial de bloqueos (revisado 2026-11-27)
 Coordinador: antes su `robots.txt` decía `User-agent: ClaudeBot` → `Disallow: /`. Hoy (`www.coordinador.cl/robots.txt`) solo bloquea `/wp-admin/`, `/wp-includes/` y `/wp-content/`, con `Allow` para `/wp-content/uploads/*`. Ya no hay regla contra ClaudeBot. Pasa a automatizado.
 Si el Disallow vuelve: manual otra vez. No se evade de ninguna forma. Ni cambiando identidad. Ni pidiendo un archivo suelto aunque responda 200.
-Ministerio de Energía: su WAF (Radware) da 403 en todo `energia.gob.cl`, incluso en `robots.txt`. Probado 2026-11-27: el 403 siguió aunque Firecrawl subió solo a proxy sigiloso. Es un bloqueo técnico general contra acceso automático.
+Ministerio de Energía: sortea para entrar al reporte y sitio web
 Sigue manual. Aunque una persona lo abra en su navegador, no se usa un navegador para saltar el bloqueo.
-Si Nicolás consigue acceso autorizado (API key, whitelist de IP, convenio de datos), se actualiza esta sección. Esa fuente pasa al patrón de ACERA.
+. Esa fuente pasa al patrón de ACERA.
 Generadoras.cl — resuelto
 Probado 2026-11-27: su `robots.txt` solo bloquea `/wp-admin/`. El listado `generadoras.cl/category/boletines-mensuales/` carga con Firecrawl (proxy basic), sin captcha. Pasa al patrón de ACERA.
 Si el captcha vuelve a aparecer: manual otra vez. No se evade.
