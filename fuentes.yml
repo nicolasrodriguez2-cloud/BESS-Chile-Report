@@ -32,5 +32,5 @@
 - nombre: Ministerio_Energia
   carpeta: MIN ENERGIA
   url: PEGAR_URL
-  metodo_primario: manual
-  fallback_scrapling: false    # probado 2026-11-27: WAF 403 en todo el dominio
+  metodo_primario: firecrawl
+  fallback_scrapling: true    
