@@ -1,6 +1,6 @@
 # Pipeline semanal BESS Chile — diseño
 
-Fecha: 2026-11-27 · Estado: **borrador para aprobación de Nicolás** (nada de esto está construido).
+Fecha: 2026-11-27 · Estado: **aprobado por Nicolás con dos ajustes**: (1) las primeras corridas semanales son en modo "solo avisar" (ver 5.11) y (2) el primer paso del plan es probar la descarga de PDFs desde GitHub Actions (ver 5.1). Nada de esto está construido todavía.
 
 ## 1. Intención
 
@@ -48,7 +48,7 @@ Hoy un agente (Claude) lee cada mes 4 reportes en PDF, interpreta un CLAUDE.md d
 ## 5. Diseño
 
 ### 5.1 Qué corre y dónde (mi decisión)
-Un paquete Python (`pipeline/`) invocado por un cron **semanal** de GitHub Actions. El script es el mismo si más adelante se prefiere correrlo desde otra parte. **Primer paso del plan: probar que desde un runner de GitHub se pueden bajar los PDFs de las 3 fuentes abiertas.** Si alguna fuente bloquea esas IPs, no se evade: se corre desde otro lugar (por ejemplo una Routine de Claude Code con el mismo script) o esa fuente pasa a manual.
+Un paquete Python (`pipeline/`) invocado por un cron **semanal** de GitHub Actions. El script es el mismo si más adelante se prefiere correrlo desde otra parte. **Primer paso del plan (confirmado por Nicolás): probar que desde un runner de GitHub Actions se pueden bajar los PDFs de las 3 fuentes abiertas, antes de construir nada más.** Si alguna fuente bloquea esas IPs, no se evade: se corre desde otro lugar (por ejemplo una Routine de Claude Code con el mismo script) o esa fuente pasa a manual.
 
 ### 5.2 Extractor por fuente
 Un módulo por fuente, anclado en **textos del documento** (títulos de tabla, rótulos), nunca en número de página ni en el nombre del archivo.
@@ -62,8 +62,8 @@ Un módulo por fuente, anclado en **textos del documento** (títulos de tabla, r
 
 Reglas que se heredan: el **período real** sale del contenido; Coordinador y E. Abierta traen datos del mes anterior; si el sitio tiene varias versiones (`-v2`) vale la más nueva.
 
-### 5.3 Lámina de Min. Energía (único uso de modelo en el camino normal)
-Se renderiza la página a imagen y se pide a un modelo con visión **solo dos números**: "declarado en construcción" y el total del semicírculo. Se valida contra el texto del mismo informe: operativos + pruebas + construcción (del párrafo) + declarado debe sumar el total (tolerancia ±2 MW por redondeo). Si no cuadra, se reintenta una vez con otro modelo; si sigue sin cuadrar, `Z` queda vacío y se alerta. Si el "declarado" es idéntico al del mes anterior, se carga pero se marca "posible dato desactualizado".
+### 5.3 Lámina de Min. Energía (única lectura que hace Claude; cambio pedido por Nicolás)
+No se usa la API de Anthropic: la lectura la hace **Claude en una sesión de Claude Code**. El script (GitHub Actions) detecta el PDF nuevo en `MIN ENERGIA/`, saca del texto todo lo que se puede (columnas D y N), renderiza la página de la lámina a imagen y deja la tarea anotada como pendiente (`estado/pendientes.json`). Una tarea programada de Claude Code corre cada semana y termina enseguida si no hay pendientes (mi decisión; la alternativa es que Nicolás pida "lee la lámina" a mano después de subir el PDF). Claude lee de la imagen **solo dos números**: "declarado en construcción" y el total del semicírculo, y los deja en `estado/`. Se valida contra el texto del mismo informe: operativos + pruebas + construcción (del párrafo) + declarado debe sumar el total (tolerancia ±2 MW por redondeo). Si no cuadra o la imagen no se lee clara, no se carga: `Z` queda vacío, el pendiente sigue abierto y se alerta. Mientras el pendiente está abierto, solo `Z` espera: `D` y `N` se publican normal. El costo corre por el uso de Claude de Nicolás, no por facturación de API. Si el "declarado" es idéntico al del mes anterior, se carga pero se marca "posible dato desactualizado".
 
 ### 5.4 Corrida semanal que solo actualiza lo que cambió
 Un manifiesto (`estado/manifiesto.json`) guarda, por fuente y período: URL, sha256 y los valores extraídos. Cada semana el script:
@@ -91,16 +91,23 @@ Las pruebas ejecutan cada extractor sobre los PDFs que ya están en el repo y co
 `CLAUDE.md` se reduce a unas 30 líneas: política de acceso (no evadir bloqueos), cómo está organizado el pipeline y qué hacer cuando un extractor falla. Cuando un formato cambie, un agente repara el extractor y las pruebas guían el arreglo.
 
 ### 5.9 Limpieza única del Excel y del repo
-Con E. Abierta fuera: quitar `chart1`, las filas 17-57 y las columnas H y X de la hoja BESS; eliminar la carpeta `E ABIERTA/` (~64 MB) y `historial/` (git ya guarda las versiones). Los PDFs que **ya están** en el repo (ACERA, Generadoras, Coordinador, Min. Energía) se quedan: son el material de las pruebas del 5.7. Hacia adelante, de ACERA, Generadoras y Coordinador **no se guardan PDFs nuevos** (se guarda URL y hash en el manifiesto); de Min. Energía sí, porque no se pueden volver a bajar solos. La hoja "Market Share Estimate" no se borra (contiene Main Future Projects).
+**Se hace al final del proyecto, en un commit aparte, y antes se crea el tag `pre-limpieza`** (así se puede volver atrás). Con E. Abierta fuera: quitar `chart1`, las filas 17-57 y las columnas H y X de la hoja BESS; eliminar la carpeta `E ABIERTA/` (~64 MB) y `historial/` (git ya guarda las versiones). Los PDFs que **ya están** en el repo (ACERA, Generadoras, Coordinador, Min. Energía) se quedan: son el material de las pruebas del 5.7. Hacia adelante, de ACERA, Generadoras y Coordinador **no se guardan PDFs nuevos** (se guarda URL y hash en el manifiesto); de Min. Energía sí, porque no se pueden volver a bajar solos. La hoja "Market Share Estimate" no se borra (contiene Main Future Projects).
+
+**Verificación previa obligatoria (pedida por Nicolás):** antes de borrar, comprobar que `chart1` y las columnas H y X no alimentan el PPT. El `.pptx` está fuera del repo, así que hace falta una copia: la sube Nicolás, o se busca en su Drive con el conector si está ahí. Se leen los gráficos y vínculos del PPT y se listan las hojas y rangos de este Excel que referencian. El `.pptx` no se modifica. Si algo del PPT depende de lo que se iba a borrar, se detiene la limpieza y se pregunta.
 
 ### 5.10 Main Future Projects (mi decisión)
 La primera versión **no modifica** esa lista. El script escribe los candidatos a alta o baja (proyectos ≥ ~1.000 MWh que aparecen o pasan a operación en las tablas de Min. Energía) en `estado/candidatos_proyectos.md`, sin alerta. La lista se actualiza cuando Nicolás lo pida.
 
-## 6. Decisiones de Nicolás pendientes
+### 5.11 Modo "solo avisar" al inicio (ajuste de Nicolás)
+Las primeras 3 o 4 corridas semanales hacen todo el trabajo (detectar, extraer, validar, armar el Excel nuevo) pero **no hacen commit**. Una variable del repo (`PUBLICAR`) controla el modo; Nicolás la cambia a `true` cuando decide activar el commit directo.
+- En este modo la corrida **informa cada semana, incluso si todo salió bien** (mi decisión): un resumen con las celdas que habría escrito, sus valores anteriores y las validaciones, más el Excel propuesto como archivo adjunto de la corrida para abrirlo y compararlo. Al activar el commit directo, las alertas vuelven a ser solo ante fallos.
+- Criterio sugerido para activarlo (mi decisión): 3 o 4 corridas sin falsos errores y con al menos 2 reportes nuevos procesados y revisados por Nicolás. Como las fuentes publican una vez al mes, si en esas semanas casi no hay reportes nuevos, el modo se extiende; las pruebas con el histórico (5.7) cubren mientras tanto.
 
-1. **Clave de API de Anthropic como secreto del repo** (la agrega él en Settings → Secrets) para que el script lea la lámina de Min. Energía. Es de centavos por mes, pero hay que darla. Alternativa: que la lámina se lea en una sesión de Claude Code solo cuando él suba un PDF nuevo, a cambio de un paso manual más.
-2. **Autorizar la limpieza del 5.9**: borrar `chart1`, filas 17-57, columnas H y X, la carpeta `E ABIERTA/` y `historial/`, y dejar de guardar PDFs nuevos que no sean de Min. Energía.
-3. **Punto de partida del Excel.** El pipeline arranca desde el Excel con septiembre y octubre ya cargados, que hoy existe solo como cambio sin commit en esta sesión (junto con 5 PDFs de respaldo y la copia en `historial/`). Hay que decidir cuándo se sube a `main`; mientras tanto el repo no tiene esos datos.
+## 6. Decisiones de Nicolás (respondidas el 2026-11-27)
+
+1. **Sin API de Anthropic (cambio del 2026-11-27, reemplaza su respuesta anterior):** la lectura de la lámina de Min. Energía la hace Claude en una sesión de Claude Code (ver 5.3). No hace falta clave ni límite de gasto.
+2. **Limpieza del 5.9: sí, pero al final,** en un commit aparte y con el tag `pre-limpieza`. Antes de borrar se verifica que `chart1` y las columnas H y X no alimenten el PPT.
+3. **Punto de partida del Excel:** se sube a `main` antes del plan, junto con los 5 PDFs de respaldo y este diseño, mostrándole antes el diff del Excel.
 
 ## 7. Qué queda para quien construya
 Estructura de carpetas y librerías, rangos de variación (a partir del histórico), día y hora del cron, formato exacto del manifiesto, y la prueba de viabilidad desde GitHub Actions descrita en 5.1.
