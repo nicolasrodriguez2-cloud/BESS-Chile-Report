@@ -1,151 +1,171 @@
 CLAUDE.md — BESS-Chile-Report
-
-Repo fuente de verdad para el agente "Capacidad BESS Chile". Corre como Claude Code Routine mensual. Este documento es lo que la Routine lee al empezar cada corrida — no asumas contexto fuera de este archivo y de los datos ya presentes en el repo.
-
-Rol de la Routine
-
-Una vez al mes, actualizás Información_reportes_Mensuales.xlsx (datos + los 2 gráficos nativos ya existentes en el archivo) a partir de 5 fuentes públicas sobre BESS y matriz eléctrica en Chile, directo en tu rama, y abrís un Pull Request con el archivo editado + changelog + copia fechada en /historial/. Nunca mergeás tu propio PR.
-
-Este archivo es el mismo Excel al que apunta (por link externo roto, ya no relevante) el gráfico del PPT "BYD Chile Market Report" — es la fuente real, no una copia. La Routine solo toca este repo; el PPT se actualiza aparte, manualmente, en una sesión de Chat distinta.
-
-Estructura del repo (real, no inferida)
-/ACERA/            ← PDFs de ACERA, un archivo por mes
-/COORDINADOR/      ← PDFs del Coordinador, un archivo por mes
-/E ABIERTA/        ← PDFs de Energía Abierta, un archivo por mes
-/GENERADORAS/      ← PDFs de Generadoras.cl, un archivo por mes
-/MIN ENERGIA/      ← PDFs de Ministerio de Energía, un archivo por mes
-/Información_reportes_Mensuales.xlsx   ← archivo oficial, un solo activo
+Repo = fuente de verdad. Agente "Capacidad BESS Chile". Routine mensual.
+Lee este archivo al empezar cada corrida. No asumas nada fuera de este archivo y de lo que hay en el repo.
+Rol
+Una vez al mes, actualiza `Información_reportes_Mensuales.xlsx` (datos + los 2 gráficos nativos que ya existen).
+Usa solo datos publicados en los reportes de 5 fuentes públicas.
+Trabaja en tu rama. Abre un Pull Request con: Excel editado + changelog + copia fechada en `/historial/`.
+Nunca hagas merge de tu propio PR.
+Este Excel es la fuente real del gráfico del PPT "BYD Chile Market Report". El link externo viejo está roto, no importa.
+No toques ningún `.pptx`. El PPT se actualiza aparte, a mano.
+Alcance
+Solo datos de los reportes de las 5 fuentes.
+NO busques competidores, clientes, ferias, regulación ni market share. Otras tareas lo hacen.
+Si algo te pide salir de este alcance: no lo hagas. Anótalo en el PR.
+Estructura del repo
+```
+/ACERA/          PDFs de ACERA, uno por mes
+/COORDINADOR/    PDFs del Coordinador, uno por mes
+/E ABIERTA/      PDFs de Energía Abierta, uno por mes
+/GENERADORAS/    PDFs de Generadoras.cl, uno por mes
+/MIN ENERGIA/    PDFs del Ministerio de Energía, uno por mes
+/Información_reportes_Mensuales.xlsx   archivo oficial, solo uno activo
 /historial/AAAAMMDD_Información_reportes_Mensuales.xlsx
+/fuentes.yml     lista de fuentes y qué método permite cada una
+/scripts/fetch_fallback.py   plan B de acceso (solo HTTP)
+/datos_crudos/AAAAMM/        salida del script. No tocar a mano.
 /CLAUDE.md
 /README.md
-
-⚠️ Dos de estos cinco nombres de carpeta tienen espacio (E ABIERTA, MIN ENERGIA). Al construir paths en scripts, siempre con comillas o escapado — un path sin comillas se rompe silenciosamente ahí.
-
-⚠️ Cada carpeta tiene además un archivo sin extensión con un nombre corto (Acera, Coord, Gen, Min, E ABIERTA) que no corresponde al patrón de los reportes reales. No se sabe qué son — la Routine los ignora al procesar (no son PDFs, no tienen fecha reconocible) y no los borra ni los toca; si conviene limpiarlos, es una decisión de Nicolás, no de la Routine.
-
-Cómo se relaciona cada carpeta con el método de acceso de su fuente
-Carpeta	Fuente	Acceso	Qué hace la Routine con la carpeta
-/ACERA/	ACERA — Boletín Estadísticas	✅ Automatizado (URL predecible)	La Routine fetchea la URL del mes, y además guarda una copia del PDF acá como respaldo/auditoría de qué documento sustenta cada cifra cargada. Nunca lee de acá para obtener el dato — siempre fetch en vivo; la copia es solo registro.
-/E ABIERTA/	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado	Mismo patrón que ACERA: fetch en vivo + copia de respaldo en la carpeta.
-/COORDINADOR/	Coordinador Eléctrico Nacional — Informe Mensual	❌ Manual (robots.txt: Disallow / para ClaudeBot — ver más abajo)	La Routine lee de acá, nunca intenta bajar el PDF sola. Nicolás sube el PDF del mes navegando el sitio como cualquier persona.
-/MIN ENERGIA/	Ministerio de Energía — Reporte de Proyectos	❌ Manual (WAF/403 en todo el dominio)	Igual que Coordinador: la Routine solo lee de acá.
-/GENERADORAS/	Generadoras.cl — Boletines Mensuales	⚠️ Pendiente de confirmar	Hasta confirmar si el acceso automatizado es viable (ver sección abajo), la Routine trata esta carpeta igual que Coordinador/Ministerio: lee de acá, no intenta bajar sola. Si se confirma que se puede automatizar, pasa al mismo patrón que ACERA/E. Abierta.
-Por qué Coordinador y Ministerio de Energía quedan en manual
-
-Coordinador: su robots.txt declara explícitamente User-agent: ClaudeBot → Disallow: / — decisión declarada del sitio dirigida específicamente al crawler de Anthropic, no un bloqueo técnico incidental. No se evade de ninguna forma — ni cambiando identidad/user-agent, ni pidiendo un asset estático puntual en vez de navegar el sitio, aunque esa ruta responda 200 técnicamente. El robots.txt sigue diciendo "no" a nivel de dominio completo, y esa directiva se respeta.
-
-Ministerio de Energía: WAF (Radware) devuelve 403 en todo el dominio energia.gob.cl — panel, PDFs sueltos, y probablemente su propio robots.txt. A diferencia de Coordinador, acá no hay una declaración tipo robots.txt de por medio — es un bloqueo técnico indiscriminado. El resultado práctico es el mismo (fuente no accesible), por un motivo distinto.
-
-Si en algún momento se consigue una vía de acceso autorizada de cualquiera de las dos instituciones (API key vigente, whitelist de IP, convenio de datos, etc.), se actualiza esta sección y esa fuente pasa al patrón de ACERA/E. Abierta.
-
-Pendiente — Generadoras.cl
-
-Un PDF suelto de generadoras.cl/wp-content/uploads/... respondió 200 en una prueba anterior — el bloqueo tipo captcha (Sucuri) visto antes puede no aplicar a esa ruta. Falta confirmar si la página de listado (generadoras.cl/category/boletines-mensuales/) carga sin challenge; si sí, el acceso automatizado es viable (mismo patrón que ACERA) y esta fuente sale de la tabla de "manual". Si también bloquea, se confirma como manual definitivo.
-
-Regla crítica de todas las fuentes
-
-Algunos reportes se publican bajo el nombre del mes "X" pero contienen datos correspondientes al mes "X-1" (confirmado para Coordinador y Energía Abierta; ACERA no tiene este desfase). Antes de cargar cualquier cifra — venga de fetch automático o de un PDF ya en el repo — verificar dentro del documento mismo a qué período corresponde el dato. Nunca asumir el período por el nombre del archivo, la carpeta, ni el mes de publicación. Si el período real no queda claro en el documento, señalizarlo en el changelog en vez de adivinar.
-
-Estructura exacta del archivo Información_reportes_Mensuales.xlsx
+```
+⚠️ `E ABIERTA` y `MIN ENERGIA` tienen espacio. En scripts usa siempre comillas. Sin comillas se rompe en silencio.
+⚠️ Cada carpeta de fuente tiene un archivo sin extensión y nombre corto (Acera, Coord, Gen, Min, E ABIERTA). No se sabe qué son. Ignóralos. No los borres ni los toques. Limpiarlos es decisión de Nicolás.
+Cómo entrar a cada fuente
+Orden fijo:
+Lee el `robots.txt` del dominio de la fuente. Si hay Disallow para tu ruta: es bloqueo de política. Ve al paso 3.
+`firecrawl_scrape`, siempre con `proxy: "basic"`. Siempre primero. En modo auto, Firecrawl puede subir a proxy sigiloso ante un 403. Eso es evadir. No lo permitas.
+Si falla por causa técnica y `fuentes.yml` dice `fallback_scrapling: true`: usa Scrapling.
+Herramienta MCP `make_request`, o
+`python scripts/fetch_fallback.py <url> --fuente <nombre>`.
+Si hay bloqueo de política: para. Marca "carga manual". Lee el archivo de la carpeta de la fuente.
+Tipo	Ejemplos	Qué haces
+Fallo técnico	timeout, error 5xx, página vacía	Scrapling (si la fuente lo permite)
+Bloqueo de política	robots.txt con Disallow, 403 en todo el dominio, captcha o desafío anti-bot	Parar. Carga manual.
+Antes de usar Scrapling: lee el `robots.txt` del dominio. Si dice Disallow: para.
+Si Scrapling da 401, 403 o 429: es bloqueo. Para. No reintentes.
+Prohibido, siempre:
+Evadir bloqueos. Ni de robots.txt ni de WAF ni de captcha.
+Proxy. `impersonate`. `StealthyFetcher`. `solve_cloudflare`.
+Cualquier herramienta `browser_*` de Scrapling.
+Cambiar user-agent. Buscar una ruta alterna al mismo archivo.
+Si Firecrawl y Scrapling fallan por causa técnica en una fuente automatizada:
+deja la celda vacía. No inventes. Anota "sin dato este mes: fallo técnico" en el changelog.
+Cada carpeta y su fuente
+Carpeta	Fuente	Acceso	Qué hace la Routine
+`/ACERA/`	ACERA — Boletín Estadísticas	✅ Automatizado (URL predecible). Scrapling permitido.	Lee el PDF del mes en vivo. Guarda copia del PDF aquí como respaldo. Nunca saques el dato de la carpeta: siempre en vivo. La copia es solo registro.
+`/E ABIERTA/`	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado. Scrapling permitido.	Igual que ACERA.
+`/COORDINADOR/`	Coordinador Eléctrico Nacional — Informe Mensual	✅ Automatizado (robots.txt ya no bloquea, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si el robots.txt vuelve a bloquear: pasa a manual y lee solo de aquí.
+`/MIN ENERGIA/`	Ministerio de Energía — Reporte de Proyectos	❌ Manual (WAF, 403)	Igual que Coordinador.
+`/GENERADORAS/`	Generadoras.cl — Boletines Mensuales	✅ Automatizado (listado público sin captcha, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si vuelve el captcha: manual.
+Si no puedes guardar el PDF de respaldo: anota URL + fecha + hash en el changelog.
+Historial de bloqueos (revisado 2026-11-27)
+Coordinador: antes su `robots.txt` decía `User-agent: ClaudeBot` → `Disallow: /`. Hoy (`www.coordinador.cl/robots.txt`) solo bloquea `/wp-admin/`, `/wp-includes/` y `/wp-content/`, con `Allow` para `/wp-content/uploads/*`. Ya no hay regla contra ClaudeBot. Pasa a automatizado.
+Si el Disallow vuelve: manual otra vez. No se evade de ninguna forma. Ni cambiando identidad. Ni pidiendo un archivo suelto aunque responda 200.
+Ministerio de Energía: su WAF (Radware) da 403 en todo `energia.gob.cl`, incluso en `robots.txt`. Probado 2026-11-27: el 403 siguió aunque Firecrawl subió solo a proxy sigiloso. Es un bloqueo técnico general contra acceso automático.
+Sigue manual. Aunque una persona lo abra en su navegador, no se usa un navegador para saltar el bloqueo.
+Si Nicolás consigue acceso autorizado (API key, whitelist de IP, convenio de datos), se actualiza esta sección. Esa fuente pasa al patrón de ACERA.
+Generadoras.cl — resuelto
+Probado 2026-11-27: su `robots.txt` solo bloquea `/wp-admin/`. El listado `generadoras.cl/category/boletines-mensuales/` carga con Firecrawl (proxy basic), sin captcha. Pasa al patrón de ACERA.
+Si el captcha vuelve a aparecer: manual otra vez. No se evade.
+Regla crítica: período real
+Algunos reportes salen con nombre del mes "X" pero traen datos del mes "X-1".
+Confirmado en Coordinador y Energía Abierta. ACERA no tiene este desfase.
+Antes de cargar cualquier cifra (fetch en vivo o PDF ya en el repo): mira dentro del documento a qué período corresponde.
+Nunca uses el nombre del archivo, la carpeta o el mes de publicación.
+Si el período no queda claro: no adivines. Señálalo en el changelog.
+Estructura exacta del Excel `Información_reportes_Mensuales.xlsx`
 Hoja "BESS"
-
-Filas 2-15 — seis tablas mes a mes (2026), cada una con columnas fijas por fuente (no todas las fuentes alimentan todas las tablas):
-
-Bloque (fila 2)	Rango cols	Fuentes que reportan esta métrica (fila 3)
+Filas 2-15. Seis tablas, mes a mes (2026). Columnas fijas por fuente. No todas las fuentes alimentan todas las tablas.
+Bloque (fila 2)	Columnas	Fuentes (fila 3)
 BESS in operation MW	C:E	Generadoras, Min. Energía, ACERA
 BESS in operation MWh	H:J	E. Abierta, Generadoras, ACERA
 BESS in test MW	M:P	Generadoras, Min. Energía, Coordinador, ACERA
 BESS in test MWh	S:T	Generadoras, ACERA
 BESS in construction MW	X:AA	E. Abierta, Generadoras, Min. Energía, ACERA
 BESS in construction MWh	AD:AE	Generadoras, ACERA
-
-Coordinador solo alimenta "BESS in test MW" — su informe mensual no reporta capacidad en operación ni en construcción, solo lo que está en etapa de pruebas en el SEN. No forzar un dato de Coordinador en las otras cinco tablas.
-
-Es normal y esperado que queden celdas vacías en un mes si esa fuente específica todavía no publicó su informe para ese mes al momento de la corrida — la Routine no rellena con estimaciones propias. Si en una corrida posterior una fuente publica retroactivamente el dato de un mes anterior que había quedado vacío, sí se completa ese hueco histórico (no solo se avanza con el mes en curso).
-
-Filas 17-57 — "Evolución capacidad BESS operativo" (mismos datos que Energía Abierta llama "según fecha estimada de interconexión" — es la misma serie, dos nombres distintos para lo mismo):
-
-Columnas: Month (fecha), Year, Acumulado [MWh], Mensual [MWh]
+Coordinador solo alimenta "BESS in test MW". Su informe no trae operación ni construcción. No fuerces un dato de Coordinador en las otras cinco tablas.
+Celdas vacías son normales si la fuente aún no publicó ese mes. No rellenes con estimación.
+Si una fuente publica tarde el dato de un mes viejo que estaba vacío: completa ese hueco. No avances solo con el mes en curso.
+Filas 17-57. "Evolución capacidad BESS operativo". Es la misma serie que Energía Abierta llama "según fecha estimada de interconexión". Dos nombres, misma cosa.
+Columnas: Month (fecha), Year, Acumulado [MWh], Mensual [MWh].
 Fuente única: Energía Abierta.
-Alimenta chart1 del archivo (nativo, ya existe — no recrear, solo actualizar los valores cacheados o agregar filas si corresponde).
-Extiende hacia 2027-2029 con proyectos ya conocidos — al agregar el mes en curso, no se tocan las proyecciones futuras salvo que la fuente las actualice explícitamente.
+Alimenta `chart1` (nativo, ya existe). No lo recrees. Solo actualiza valores o agrega filas.
+Llega hasta 2027-2029 con proyectos ya conocidos. Al agregar el mes en curso, no toques las proyecciones futuras salvo que la fuente las cambie de forma explícita.
 Hoja "Energy Matrix"
-
-Filas 3-13 — tabla mensual con las categorías tal como las reporta el Coordinador (10 categorías: Reservoir Hydraulics, Run of the River Hydraulics, Natural Gas, Coal, Diesel, Other thermal, Eolic, Solar Thermal, Solar PV, Geothermal + Total). Se agrega una columna nueva cada mes con el dato del informe del Coordinador. Fuente única: Coordinador (vía /COORDINADOR/, carga manual).
-
-Filas 16-25 — tabla resumen del mes más reciente, con categorías combinadas (Hydric = Reservoir + Run of the River; Solar = Solar PV + Solar Thermal; el resto igual) + columna de %. Alimenta chart2 (el pie de capacidad instalada, el mismo que usa el PPT). Se recalcula cada mes tomando la última columna de la tabla de arriba y combinando categorías — no es un dato aparte, es una transformación de la tabla de arriba.
-
-⚠️ Energy Matrix!C25 es un valor escrito a mano (no fórmula), y es el multiplicador de toda la columna B de la tabla resumen. Al agregar una columna nueva, actualizarlo junto con las referencias de C17:C24, o se descuadra en silencio la tabla que alimenta chart2.
-
+Filas 3-13. Tabla mensual con las categorías como las reporta el Coordinador:
+Reservoir Hydraulics, Run of the River Hydraulics, Natural Gas, Coal, Diesel, Other thermal, Eolic, Solar Thermal, Solar PV, Geothermal + Total.
+Cada mes se agrega una columna nueva con el dato del informe del Coordinador.
+Fuente única: Coordinador (automatizado; respaldo del PDF en `/COORDINADOR/`).
+Filas 16-25. Tabla resumen del mes más reciente, con categorías combinadas:
+Hydric = Reservoir + Run of the River. Solar = Solar PV + Solar Thermal. El resto igual. Más columna de %.
+Alimenta `chart2` (el pie de capacidad instalada, el mismo del PPT).
+No es un dato aparte. Es una transformación de la última columna de la tabla de arriba. Recalcúlala cada mes.
+⚠️ `Energy Matrix!C25` es un valor escrito a mano (no fórmula). Es el multiplicador de toda la columna B de la tabla resumen.
+Al agregar una columna nueva, actualiza C25 y las referencias de C17:C24. Si no, la tabla que alimenta `chart2` se descuadra en silencio.
 Main Future Projects (≥ ~1000 MWh)
-
-Investigación abierta (no limitada a las 5 fuentes de arriba) para identificar proyectos BESS relevantes en Chile por tamaño:
-
-Alta: proyecto nuevo identificado con capacidad ≥ ~1000 MWh.
-Baja: proyecto que pasó de "futuro/en desarrollo" a "en operación" — se saca de esta lista (el dato pasa a vivir en las tablas de operación correspondientes).
-La Routine puede agregar/quitar filas acá sin señalizar para revisión previa (no es una decisión estructural), pero siempre queda en el changelog.
+Ya no hay búsqueda abierta. Solo mira lo que dicen los reportes de las 5 fuentes.
+Alta: un reporte muestra un proyecto nuevo con capacidad ≥ ~1000 MWh.
+Baja: un reporte muestra que el proyecto pasó a operación. Sácalo de la lista. El dato pasa a las tablas de operación.
+Puedes agregar y quitar filas aquí sin pedir revisión antes. No es cambio estructural. Siempre va en el changelog.
 Tabla unificada ACERA — "BESS Situation in Chile"
-
-Nueva tabla (hoja ACERA Summary, o al final de la hoja BESS — a elección de la Routine, dejarlo señalado en el changelog la primera vez que se cree) que consolida solo las columnas de fuente ACERA de las seis tablas de arriba, en el mismo formato que ACERA usa en su propio reporte: una fila por mes, tres bloques (Operation, Test, Construction), cada uno con sub-columnas MW y MWh.
-
-Mapeo exacto (referencias a la hoja BESS, nunca valores hardcodeados — son fórmulas que apuntan a las celdas ya cargadas):
-
-Columna de la tabla nueva	Referencia
-Operation MW	=BESS!E{fila}
-Operation MWh	=BESS!J{fila}
-Test MW	=BESS!P{fila}
-Test MWh	=BESS!T{fila}
-Construction MW	=BESS!AA{fila}
-Construction MWh	=BESS!AE{fila}
-
-Formato visual de referencia: encabezado combinado "BESS Situation in Chile (ACERA, {año})", filas Enero-Diciembre, celda vacía si el dato ACERA de ese mes todavía no está cargado (no se estima, mismo criterio que el resto del archivo). Se actualiza sola cada corrida porque son fórmulas — la Routine no tiene que "llenarla" aparte, solo asegurarse de que las 6 columnas de origen (E, J, P, T, AA, AE) estén al día.
-
+Tabla nueva (hoja `ACERA Summary`, o al final de la hoja BESS; elige tú y anótalo en el changelog la primera vez).
+Junta solo las columnas ACERA de las seis tablas de arriba. Mismo formato que el reporte de ACERA: una fila por mes, tres bloques (Operation, Test, Construction), cada uno con MW y MWh.
+Son fórmulas que apuntan a la hoja BESS. Nunca valores a mano.
+Columna nueva	Referencia
+Operation MW	`=BESS!E{fila}`
+Operation MWh	`=BESS!J{fila}`
+Test MW	`=BESS!P{fila}`
+Test MWh	`=BESS!T{fila}`
+Construction MW	`=BESS!AA{fila}`
+Construction MWh	`=BESS!AE{fila}`
+Formato: encabezado combinado "BESS Situation in Chile (ACERA, {año})". Filas Enero-Diciembre. Celda vacía si ACERA aún no cargó ese mes. No se estima.
+Se actualiza sola porque son fórmulas. Solo asegura que las 6 columnas de origen (E, J, P, T, AA, AE) estén al día.
 Qué NO hace esta Routine
-No investiga ni estima participación de mercado por fabricante (market share) — se sacó del alcance porque la búsqueda abierta no encontraba información confiable y consumía tiempo/tokens sin resultado. Si en el futuro aparece una fuente concreta y verificable para esto, se reincorpora explícitamente al CLAUDE.md, no antes.
-No toca ningún archivo .pptx — vive fuera de este repo.
-No inventa el período de un dato cuando el reporte fuente no lo deja claro — lo señaliza.
-No rellena con estimación propia una celda vacía porque una fuente no publicó a tiempo — la deja vacía y lo nota en el changelog.
-No intenta descargar por su cuenta los PDFs de /COORDINADOR/ ni /MIN ENERGIA/ (ni de /GENERADORAS/ mientras esté pendiente de confirmar) — solo los lee si ya están subidos.
-No evade bloqueos declarados (robots.txt) ni técnicos (WAF/captcha) de ninguna fuente, bajo ninguna forma.
-No mergea su propio PR. No renombra, reordena ni elimina carpetas ni hojas sin señalizarlo — incluidos los archivos sin extensión de origen desconocido en cada carpeta de fuente.
-Changelog de cada corrida (formato, va en la descripción del PR)
+No busca competidores, clientes, ferias ni regulación.
+No estima market share por fabricante. Se sacó: la búsqueda no hallaba datos confiables y gastaba tokens. Solo vuelve si aparece una fuente concreta y verificable, y se escribe aquí.
+No toca ningún `.pptx`.
+No inventa el período de un dato. Si no está claro, lo señala.
+No rellena una celda vacía con estimación propia.
+No baja por su cuenta los PDFs de `/MIN ENERGIA/`. Solo los lee si ya están subidos. En cualquier otra fuente, si reaparece un bloqueo de política, pasa a manual y lee solo de la carpeta.
+No evade bloqueos. Ni declarados (robots.txt) ni técnicos (WAF, captcha). De ninguna fuente. De ninguna forma.
+No hace merge de su PR.
+No renombra, reordena ni elimina carpetas ni hojas sin señalarlo. Incluye los archivos sin extensión de origen desconocido.
+Antes de abrir el PR
+Corre `arithmetic-check` sobre las cifras nuevas (sumas, %, MW × horas ≈ MWh).
+Verifica el período real de cada cifra.
+Muestra el diff: celda, valor viejo, valor nuevo, fuente.
+No digas "listo" sin evidencia de estos pasos.
+Si ninguna fuente tiene reporte nuevo: no abras PR. Deja "sin novedades" en una nota breve.
+Changelog de cada corrida (va en la descripción del PR)
+```
 ## Corrida AAAA-MM
 
 ### Hoja BESS — filas 2-15
-- [bloque]: [mes] → [valor(es) nuevos], fuente [X]
-- Huecos rellenados retroactivamente: [mes/fuente/bloque, si aplica]
-- Huecos que quedan pendientes: [fuente que no había publicado al momento
-  de la corrida]
+- [bloque]: [mes] → [valor(es) nuevos], fuente [X], método [firecrawl / scrapling / manual]
+- Huecos rellenados atrás: [mes/fuente/bloque, si aplica]
+- Huecos pendientes: [fuente que no había publicado al correr]
 
-### Fuentes automatizadas (ACERA, E. Abierta [, Generadoras si se confirma])
-- PDF fetcheado y archivado en /[CARPETA]/[nombre]: período verificado
-  [mes/año]
+### Fuentes automatizadas (ACERA, E. Abierta, Generadoras, Coordinador)
+- PDF leído y archivado en /[CARPETA]/[nombre]: período verificado [mes/año], método [...]
+- Fuente con fallo técnico: [cuál, qué pasó, celda quedó vacía]
 
-### Fuentes manuales procesadas esta corrida (Coordinador / Min. Energía [/ Generadoras si sigue manual])
-- [institución]: `/[CARPETA]/[nombre exacto del PDF]` → período real
-  verificado dentro del documento: [mes/año] → celdas actualizadas: [...]
-- PDFs presentes en la carpeta que aún no se incorporaron (si los hay,
-  con motivo: ya estaban cargados / período no aplica / no se pudo
-  determinar el período)
+### Fuentes manuales procesadas (Min. Energía, o cualquier fuente que pasó a manual esta corrida)
+- [institución]: `/[CARPETA]/[nombre exacto del PDF]` → período real dentro del documento: [mes/año] → celdas actualizadas: [...]
+- PDFs en la carpeta que no se incorporaron (con motivo: ya cargado / período no aplica / período no claro)
 
 ### Hoja BESS — filas 17-57 (Energía Abierta)
 - Fila agregada/actualizada: [mes, acumulado, mensual]
 
 ### Hoja Energy Matrix
-- Columna [mes] agregada a tabla 3-13 (Coordinador)
+- Columna [mes] agregada en tabla 3-13 (Coordinador)
 - Tabla resumen 16-25 recalculada con categorías combinadas
-- Recordar actualizar C25 y C17:C24 si corresponde
+- C25 y C17:C24 actualizados: [sí/no]
 
 ### Main Future Projects
 - Altas/bajas: [...]
 
 ### Tabla unificada ACERA
-- Sin acción manual esperada (son fórmulas) — solo confirmar que no
-  quedó ninguna celda de origen (E/J/P/T/AA/AE) sin actualizar este mes
+- Sin acción manual (son fórmulas). Confirmar que ninguna celda de origen (E/J/P/T/AA/AE) quedó sin actualizar.
 
-### Períodos verificados manualmente (reportes con desfase mes X vs X-1)
-[cualquier caso donde el nombre del reporte no coincidía con el período
-real de los datos]
-
-### Fuentes sin publicación / sin acceso a la fecha de esta corrida
-[cuáles de las 5 no tenían informe disponible, o siguen bloqueadas]
+### Alcance
+- Algo fuera de alcance que se pidió y no se hizo: [...]
+```
