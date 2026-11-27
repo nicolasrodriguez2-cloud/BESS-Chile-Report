@@ -1,0 +1,36 @@
+# Una entrada por fuente. "nombre" se usa con: --fuente <nombre>
+#
+# metodo_primario:
+#   firecrawl = la Routine lee la fuente en vivo con Firecrawl (proxy basic).
+#   manual    = la Routine NO descarga. Lee el archivo que Nicolás sube a la carpeta.
+# fallback_scrapling:
+#   true  = si Firecrawl falla por causa técnica, se permite Scrapling (solo HTTP).
+#   false = no usar Scrapling en esta fuente.
+# Un bloqueo de política (robots.txt, 403 de dominio, captcha) nunca activa el fallback.
+# Antes de cada corrida: leer robots.txt. Si reaparece un Disallow, tratar la fuente como manual.
+
+- nombre: ACERA
+  carpeta: ACERA
+  url: PEGAR_URL_PREDECIBLE_DEL_MES
+  metodo_primario: firecrawl
+  fallback_scrapling: true
+- nombre: Energia_Abierta
+  carpeta: E ABIERTA
+  url: PEGAR_URL
+  metodo_primario: firecrawl
+  fallback_scrapling: true
+- nombre: Generadoras
+  carpeta: GENERADORAS
+  url: https://generadoras.cl/category/boletines-mensuales/
+  metodo_primario: firecrawl
+  fallback_scrapling: true     # probado 2026-11-27: robots.txt abierto, sin captcha
+- nombre: Coordinador
+  carpeta: COORDINADOR
+  url: PEGAR_URL_DEL_INFORME_MENSUAL   # confirmar que cuelga de www.coordinador.cl
+  metodo_primario: firecrawl
+  fallback_scrapling: true     # probado 2026-11-27: robots.txt ya no bloquea a ClaudeBot
+- nombre: Ministerio_Energia
+  carpeta: MIN ENERGIA
+  url: PEGAR_URL
+  metodo_primario: manual
+  fallback_scrapling: false    # probado 2026-11-27: WAF 403 en todo el dominio
