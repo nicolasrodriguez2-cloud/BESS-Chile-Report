@@ -26,7 +26,7 @@
   fallback_scrapling: true     # probado 2026-11-27: robots.txt abierto, sin captcha
 - nombre: Coordinador
   carpeta: COORDINADOR
-  url: https://www.coordinador.cl/reportes/documentos/reporte-energetico/   # confirmar que cuelga de www.coordinador.cl
+  url: https://www.coordinador.cl/reportes/documentos/informe-mensual-coordinador-electrico-nacional/  # confirmar que cuelga de www.coordinador.cl
   metodo_primario: firecrawl
   fallback_scrapling: true     # probado 2026-11-27: robots.txt ya no bloquea a ClaudeBot
 - nombre: Ministerio_Energia
