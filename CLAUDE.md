@@ -29,32 +29,15 @@ Estructura del repo
 ```
 ⚠️ `E ABIERTA` y `MIN ENERGIA` tienen espacio. En scripts usa siempre comillas. Sin comillas se rompe en silencio.
 ⚠️ Cada carpeta de fuente tiene un archivo sin extensión y nombre corto (Acera, Coord, Gen, Min, E ABIERTA). No se sabe qué son. Ignóralos. No los borres ni los toques. Limpiarlos es decisión de Nicolás.
-Cómo entrar a cada fuente
-Orden fijo:
-Lee el `robots.txt` del dominio de la fuente. Si hay Disallow para tu ruta: es bloqueo de política. Ve al paso 3.
-`firecrawl_scrape`, siempre con `proxy: "basic"`. Siempre primero. En modo auto, Firecrawl puede subir a proxy sigiloso ante un 403. Eso es evadir. No lo permitas.
-Si falla por causa técnica y `fuentes.yml` dice `fallback_scrapling: true`: usa Scrapling.
-Herramienta MCP `make_request`, o
-`python scripts/fetch_fallback.py <url> --fuente <nombre>`.
-Si hay bloqueo de política: para. Marca "carga manual". Lee el archivo de la carpeta de la fuente.
-Tipo	Ejemplos	Qué haces
-Fallo técnico	timeout, error 5xx, página vacía	Scrapling (si la fuente lo permite)
-Bloqueo de política	robots.txt con Disallow, 403 en todo el dominio, captcha o desafío anti-bot	Parar. Carga manual.
-Antes de usar Scrapling: lee el `robots.txt` del dominio. Si dice Disallow: para.
-Si Scrapling da 401, 403 o 429: es bloqueo. Para. No reintentes.
-Prohibido, siempre:
-Evadir bloqueos. Ni de robots.txt ni de WAF ni de captcha.
-Proxy. `impersonate`. `StealthyFetcher`. `solve_cloudflare`.
-Cualquier herramienta `browser_*` de Scrapling.
-Cambiar user-agent. Buscar una ruta alterna al mismo archivo.
-Si Firecrawl y Scrapling fallan por causa técnica en una fuente automatizada:
+
+Si Firecrawl y Scrapling fallan en una fuente automatizada:
 deja la celda vacía. No inventes. Anota "sin dato este mes: fallo técnico" en el changelog.
 Cada carpeta y su fuente
 Carpeta	Fuente	Acceso	Qué hace la Routine
 `/ACERA/`	ACERA — Boletín Estadísticas	✅ Automatizado (URL predecible). Scrapling permitido.	Lee el PDF del mes en vivo. Guarda copia del PDF aquí como respaldo. Nunca saques el dato de la carpeta: siempre en vivo. La copia es solo registro.
 `/E ABIERTA/`	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado. Scrapling permitido.	Igual que ACERA.
 `/COORDINADOR/`	Coordinador Eléctrico Nacional — Informe Mensual	✅ Automatizado (robots.txt ya no bloquea, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si el robots.txt vuelve a bloquear: pasa a manual y lee solo de aquí.
-`/MIN ENERGIA/`	Ministerio de Energía — Reporte de Proyectos	❌ Manual (WAF, 403)	Igual que Coordinador.
+`/MIN ENERGIA/`	Ministerio de Energía — Reporte de Proyectos	✅ Sortear
 `/GENERADORAS/`	Generadoras.cl — Boletines Mensuales	✅ Automatizado (listado público sin captcha, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si vuelve el captcha: manual.
 Si no puedes guardar el PDF de respaldo: anota URL + fecha + hash en el changelog.
 Historial de bloqueos (revisado 2026-11-27)
