@@ -1,4 +1,4 @@
-LAUDE.md — BESS-Chile-Report
+CLAUDE.md — BESS-Chile-Report
 
 Repo = fuente de verdad. Agente "Capacidad BESS Chile". Routine mensual. Lee este archivo al empezar cada corrida. No asumas nada fuera de este archivo y de lo que hay en el repo.
 
@@ -35,7 +35,7 @@ Cómo entrar a cada fuente
 
 Orden fijo:
 
-Lee el robots.txt del dominio de la fuente. Si hay Disallow para tu ruta: es bloqueo de política. Ve al paso 3.
+Lee el robots.txt del dominio de la fuente. Si hay Disallow para tu ruta: es bloqueo de política. Ve al paso 3. Excepción: si la fuente tiene robots_url en fuentes.yml, lee ese. Es para hosts de archivos sin robots propio (ej. cdn.acera.cl, que responde un AccessDenied de almacenamiento, no una política). Solo Nicolás agrega robots_url. Aun así, si el archivo mismo responde 401, 403 o 429: parar.
 firecrawl_scrape, siempre con proxy: "basic". Siempre primero. En modo auto, Firecrawl puede subir a proxy sigiloso ante un 403. Eso es evadir. No lo permitas.
 Si falla por causa técnica y fuentes.yml dice fallback_scrapling: true: usa Scrapling.
 Herramienta MCP make_request, o
@@ -107,6 +107,8 @@ Columnas: Month (fecha), Year, Acumulado [MWh], Mensual [MWh].
 Fuente única: Energía Abierta.
 El dato viene de un gráfico (barras sueltas, eje con etiqueta cada dos meses). NO uses el texto extraído: asigna meses mal y los "acumulados" son redondeos del eje.
 Lee la imagen del gráfico de la página. Cada barra a su mes real. Verifica que la suma de los mensuales cuadre con el acumulado. Si no cuadra o no se lee claro: no cargues. Señálalo en el changelog.
+Barra ambigua (el mes no sale único, ej. 2.697 puede ser ene o feb 2027): no la cargues. Anota las opciones en el changelog. Etiquetas que se pisan (ej. 1.018 y 1.000): relee. Si no se separan, no cargues.
+Carga solo las barras de mes único. El total debe cuadrar con el acumulado. Si el acumulado se lee a ojo, anota la diferencia.
 Alimenta chart1 (nativo, ya existe). No lo recrees. Solo actualiza valores o agrega filas.
 Llega hasta 2027-2029 con proyectos ya conocidos. Al agregar el mes en curso, no toques las proyecciones futuras salvo que la fuente las cambie de forma explícita.
 Hoja "Energy Matrix"
@@ -158,13 +160,21 @@ Coordinador
 
 El sitio puede tener varias versiones del mismo mes (-v2). Usa la más nueva. Si el repo tiene una copia más vieja: no la borres. Anótalo en el changelog.
 Dos páginas pueden apuntar a archivos con el mismo nombre (ej. Sep26). El nombre no sirve. Vale el contenido y su período real.
+Al guardar el PDF usa --nombre AAAAMM_Coordinador_InformeMensual[_v2].pdf, con AAAAMM del período real dentro del documento. Si dos archivos distintos caen en el mismo nombre, el script agrega _<hash8>. Si es idéntico, no duplica. El nombre original va en el changelog.
 Carga las cifras como el informe las trae. Si las categorías no suman el total, o una categoría salta sin explicación (ej. ~377 MW de Other thermal a Natural Gas, o Solar PV que baja), no corrijas ni ajustes. Anótalo en el changelog como "anomalía".
+"BESS in test MW" (columna O) viene de la Fig. 2: son MW de centrales híbridas en pruebas, no BESS puro. La nota del informe dice que BESS no suma a la capacidad instalada. Es el método histórico del Excel. Mantenlo y anótalo en el changelog.
 
 Generadoras
 
 Las filas de la tabla deben sumar el total que reporta el PDF. Si no suman, relee el PDF (imagen o tabla): puede faltar una fila.
 Si sigue sin cuadrar: deja la celda vacía y anótalo. No cargues un total que no puedas respaldar con las filas.
 El slug del listado puede no calzar con el mes (ej. mayo-2026-2 es junio). Confía en el período dentro del documento.
+
+Ministerio de Energía
+
+Si el texto y la tabla del mismo informe difieren (ej. 2.688 vs 2.686 MW), usa la tabla. Anota ambos valores.
+Un valor idéntico al del mes anterior es válido si el informe no lista sistemas de almacenamiento nuevos. Anótalo.
+"BESS en construcción MW" (Z9, Z10 y siguientes): carga solo el total que dice el informe. No sumes nada a mano. Los "+505" y "+705" en Z9 y Z10 fueron un error o dato viejo (Nicolás, 2026-11-27). No los repitas. No cambies Z9 ni Z10 sin que Nicolás lo pida. Anota en el changelog que desde este mes el método es solo el total del informe.
 
 Huecos y valores repetidos
 
@@ -208,10 +218,3 @@ Changelog de cada corrida (va en la descripción del PR)
 
 ### Alcance
 - Algo fuera de alcance que se pidió y no se hizo: [...]
-
-### Tabla unificada ACERA
-- Sin acción manual (son fórmulas). Confirmar que ninguna celda de origen (E/J/P/T/AA/AE) quedó sin actualizar.
-
-### Alcance
-- Algo fuera de alcance que se pidió y no se hizo: [...]
-```
