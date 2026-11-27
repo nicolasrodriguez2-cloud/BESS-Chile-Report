@@ -174,7 +174,9 @@ Ministerio de Energía
 
 Si el texto y la tabla del mismo informe difieren (ej. 2.688 vs 2.686 MW), usa la tabla. Anota ambos valores.
 Un valor idéntico al del mes anterior es válido si el informe no lista sistemas de almacenamiento nuevos. Anótalo.
-"BESS en construcción MW" (Z9, Z10 y siguientes): carga solo el total que dice el informe. No sumes nada a mano. Los "+505" y "+705" en Z9 y Z10 fueron un error o dato viejo (Nicolás, 2026-11-27). No los repitas. No cambies Z9 ni Z10 sin que Nicolás lo pida. Anota en el changelog que desde este mes el método es solo el total del informe.
+"BESS en construcción MW" (Z9, Z10 y siguientes): suma las dos categorías del informe: "en construcción" + "declarados en construcción". Usa solo cifras que el informe publica. No sumes proyectos a mano ni agregues otros sumandos.
+En el changelog anota las dos cifras por separado y su suma, con página o tabla de origen. Si el informe no separa las dos categorías, no cargues y anótalo.
+Los "+505" y "+705" en Z9 y Z10 no salen de los PDFs (Nicolás los marcó como error o dato viejo, 2026-11-27). No los repitas. No cambies Z9 ni Z10 sin que Nicolás lo pida. Si la suma de las dos categorías de esos meses calza o no con Z9 y Z10, anótalo en el changelog.
 
 Huecos y valores repetidos
 
