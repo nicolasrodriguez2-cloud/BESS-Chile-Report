@@ -11,12 +11,12 @@
 
 - nombre: ACERA
   carpeta: ACERA
-  url: PEGAR_URL_PREDECIBLE_DEL_MES
+  url: https://www.acera.cl/centro-de-informacion/
   metodo_primario: firecrawl
   fallback_scrapling: true
 - nombre: Energia_Abierta
   carpeta: E ABIERTA
-  url: PEGAR_URL
+  url: https://energiaabierta.cl/reportes/
   metodo_primario: firecrawl
   fallback_scrapling: true
 - nombre: Generadoras
@@ -26,11 +26,11 @@
   fallback_scrapling: true     # probado 2026-11-27: robots.txt abierto, sin captcha
 - nombre: Coordinador
   carpeta: COORDINADOR
-  url: PEGAR_URL_DEL_INFORME_MENSUAL   # confirmar que cuelga de www.coordinador.cl
+  url: https://www.coordinador.cl/reportes/documentos/reporte-energetico/   # confirmar que cuelga de www.coordinador.cl
   metodo_primario: firecrawl
   fallback_scrapling: true     # probado 2026-11-27: robots.txt ya no bloquea a ClaudeBot
 - nombre: Ministerio_Energia
   carpeta: MIN ENERGIA
-  url: PEGAR_URL
+  url: https://energia.gob.cl/documentos
   metodo_primario: firecrawl
   fallback_scrapling: true    
