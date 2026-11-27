@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ScraplingServer__make_request",
+      "mcp__ScraplingServer__open_request_session",
+      "mcp__ScraplingServer__session_make_request",
+      "mcp__ScraplingServer__close_session",
+      "mcp__ScraplingServer__list_sessions"
+    ],
+    "deny": [
+      "mcp__ScraplingServer__browser_fetch_once",
+      "mcp__ScraplingServer__browser_open",
+      "mcp__ScraplingServer__browser_fetch",
+      "mcp__ScraplingServer__browser_actions",
+      "mcp__ScraplingServer__browser_evaluate",
+      "mcp__ScraplingServer__browser_extract",
+      "mcp__ScraplingServer__browser_screenshot",
+      "mcp__ScraplingServer__browser_observe",
+      "mcp__ScraplingServer__browser_save_state",
+      "mcp__ScraplingServer__browser_load_state",
+      "mcp__ScraplingServer__browser_network_requests",
+      "mcp__ScraplingServer__browser_network_request"
+    ]
+  }
+}
