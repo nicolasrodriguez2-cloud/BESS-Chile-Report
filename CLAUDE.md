@@ -33,6 +33,8 @@ Estructura del repo
 
 Cómo entrar a cada fuente
 
+Paso previo, siempre: pip install -r requirements.txt. El entorno solo trae openpyxl. Sin esto, los scripts fallan por falta de librería. Si falla la instalación: anótalo en el changelog como fallo técnico y sigue solo con Firecrawl.
+
 Orden fijo:
 
 Lee el robots.txt del dominio de la fuente. Si hay Disallow para tu ruta: es bloqueo de política. Ve al paso 3. Excepción: si la fuente tiene robots_url en fuentes.yml, lee ese. Es para hosts de archivos sin robots propio (ej. cdn.acera.cl, que responde un AccessDenied de almacenamiento, no una política). Solo Nicolás agrega robots_url. Aun así, si el archivo mismo responde 401, 403 o 429: parar.
@@ -60,19 +62,25 @@ Si Firecrawl y Scrapling fallan por causa técnica en una fuente automatizada: d
 
 Cada carpeta y su fuente
 Carpeta	Fuente	Acceso	Qué hace la Routine
-/ACERA/	ACERA — Boletín Estadísticas	✅ Automatizado (URL predecible). Scrapling permitido.	Lee el PDF del mes en vivo. Guarda copia del PDF aquí como respaldo. Nunca saques el dato de la carpeta: siempre en vivo. La copia es solo registro.
+/ACERA/	ACERA — Boletín Estadísticas	✅ Automatizado (URL predecible, patrón abajo). Scrapling permitido.	Lee el PDF del mes en vivo. Guarda copia del PDF aquí como respaldo. Nunca saques el dato de la carpeta: siempre en vivo. La copia es solo registro.
 /E ABIERTA/	Energía Abierta — Reporte mensual del sector energético	✅ Automatizado. Scrapling permitido.	Igual que ACERA.
 /COORDINADOR/	Coordinador Eléctrico Nacional — Informe Mensual	✅ Automatizado (robots.txt ya no bloquea, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si el robots.txt vuelve a bloquear: pasa a manual y lee solo de aquí.
-/MIN ENERGIA/	Ministerio de Energía — Reporte de Proyectos	⚠️ Intento automático cada corrida. Hoy responde 403 (WAF).	Intenta con Firecrawl (proxy basic) y, si falla por causa técnica, con Scrapling. Si responde 401/403/429: para. Ese mes lee solo de la carpeta (Nicolás sube el PDF). Si el bloqueo se levanta, entra solo.
+/MIN ENERGIA/	Ministerio de Energía — Reporte de Proyectos	⚠️ Intento automático cada corrida. Hoy responde 403 (WAF).	Intenta una vez con Firecrawl (proxy basic). Sin Scrapling en esta fuente (fallback_scrapling: false). Si responde 401/403/429: para. Ese mes lee solo de la carpeta (Nicolás sube el PDF). Si el bloqueo se levanta, entra solo.
 /GENERADORAS/	Generadoras.cl — Boletines Mensuales	✅ Automatizado (listado público sin captcha, probado 2026-11-27). Scrapling permitido.	Igual que ACERA. Si vuelve el captcha: manual.
 
 Respaldo del PDF. Firecrawl da texto, no el archivo. Para guardar el PDF corre python scripts/descargar_pdf.py <url_del_pdf> --fuente <nombre>. Baja el PDF a la carpeta de la fuente y da el hash. Respeta robots.txt y para ante 401, 403 o 429. Anota el hash en el changelog. Si no se puede bajar: anota URL + fecha.
 
+Patrón de URL de ACERA (verificado): https://cdn.acera.cl/wp-content/uploads/{año}/{mes de publicación}/{AAAA}-{MM}-Boletin-Estadisticas-ACERA.pdf
+
+AAAA-MM es el mes del dato. El mes de publicación es el mes del dato más uno (año incluido si cruza diciembre).
+Ejemplos: septiembre 2026 está en /2026/10/, octubre 2026 en /2026/11/, marzo 2026 en /2026/04/.
+Úsalo para completar huecos de ACERA. Si una URL da 404, prueba el mes de publicación +1 y anótalo. Si sigue en 404: hueco pendiente.
+Descarga con python scripts/descargar_pdf.py <url> --fuente ACERA --nombre AAAAMM_ACERA.pdf.
 Historial de bloqueos (revisado 2026-11-27)
 
 Coordinador: antes su robots.txt decía User-agent: ClaudeBot → Disallow: /. Hoy (www.coordinador.cl/robots.txt) solo bloquea /wp-admin/, /wp-includes/ y /wp-content/, con Allow para /wp-content/uploads/*. Ya no hay regla contra ClaudeBot. Pasa a automatizado. Si el Disallow vuelve: manual otra vez. No se evade de ninguna forma. Ni cambiando identidad. Ni pidiendo un archivo suelto aunque responda 200.
 
-Ministerio de Energía: su WAF (Radware) da 403 en todo energia.gob.cl, incluso en robots.txt. Probado 2026-11-27: el 403 siguió aunque Firecrawl subió solo a proxy sigiloso. Es un bloqueo técnico general contra acceso automático. Cada corrida se intenta una vez (Firecrawl basic, luego Scrapling). Si sigue el 403: para y ese mes es manual. Si algún día el bloqueo se levanta, entra solo. Nunca se usa proxy, navegador sigiloso ni desafío resuelto para pasarlo.
+Ministerio de Energía: su WAF (Radware) da 403 en todo energia.gob.cl, incluso en robots.txt. Probado 2026-11-27: el 403 siguió aunque Firecrawl subió solo a proxy sigiloso. Es un bloqueo técnico general contra acceso automático. Cada corrida se intenta una vez, solo con Firecrawl basic. Scrapling no se usa en esta fuente. Si sigue el 403: para y ese mes es manual. Si algún día el bloqueo se levanta, entra solo. Nunca se usa proxy, navegador sigiloso ni desafío resuelto para pasarlo.
 
 Si Nicolás consigue acceso autorizado (API key, whitelist de IP, convenio de datos), se actualiza esta sección. Esa fuente pasa al patrón de ACERA.
 
@@ -174,9 +182,11 @@ Ministerio de Energía
 
 Si el texto y la tabla del mismo informe difieren (ej. 2.688 vs 2.686 MW), usa la tabla. Anota ambos valores.
 Un valor idéntico al del mes anterior es válido si el informe no lista sistemas de almacenamiento nuevos. Anótalo.
-"BESS en construcción MW" (Z9, Z10 y siguientes): suma las dos categorías del informe: "en construcción" + "declarados en construcción". Usa solo cifras que el informe publica. No sumes proyectos a mano ni agregues otros sumandos.
-En el changelog anota las dos cifras por separado y su suma, con página o tabla de origen. Si el informe no separa las dos categorías, no cargues y anótalo.
-Los "+505" y "+705" en Z9 y Z10 no salen de los PDFs (Nicolás los marcó como error o dato viejo, 2026-11-27). No los repitas. No cambies Z9 ni Z10 sin que Nicolás lo pida. Si la suma de las dos categorías de esos meses calza o no con Z9 y Z10, anótalo en el changelog.
+"BESS en construcción MW" (Z9 en adelante) = "en construcción" + "declarados en construcción". Salen de la lámina "Sistemas de Almacenamiento en ejecución", página 6 del reporte. Es un gráfico semicircular con las etiquetas como imagen: el texto extraído no las muestra. Lee la imagen de la página 6. No concluyas "el informe no separa las categorías" solo porque el texto no las trae.
+Verificado con los PDFs: Z9 (junio) = 4.705 + 505 y Z10 (julio) = 4.268 + 705. Esos +505 y +705 son los "declarados en construcción" de la lámina. Son válidos. Corrige la idea anterior de que eran error.
+Si la lámina y el texto o la tabla del mismo informe difieren (ej. agosto: lámina 4.268, texto y tabla 4.368), usa la tabla para "en construcción" y anota ambos valores. Si el "declarado" es idéntico al del mes anterior (ej. 705 en julio y agosto), cárgalo pero marca "posible dato desactualizado".
+Valores a cargar según la última revisión (confírmalos leyendo la imagen): agosto 4.368 + 705 = 5.073 (Z11); septiembre 3.702 + 799 = 4.501 (Z12); octubre 3.607 + 819 = 4.426 (Z13).
+En el changelog anota las dos cifras, la suma y la página de origen. Si la imagen no se lee clara: no cargues y anótalo.
 
 Huecos y valores repetidos
 
