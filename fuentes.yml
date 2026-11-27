@@ -13,6 +13,7 @@
   carpeta: ACERA
   url: https://www.acera.cl/centro-de-informacion/
   metodo_primario: firecrawl
+  robots_url: https://www.acera.cl/robots.txt   # cdn.acera.cl no tiene robots.txt
   fallback_scrapling: true
 - nombre: Energia_Abierta
   carpeta: E ABIERTA
